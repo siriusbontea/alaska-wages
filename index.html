@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>🐻‍❄️ Alaska's Median Earnings</title>
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+		integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+	<!-- Leaflet CSS -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+		integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+		crossorigin="" />
+	<!-- Fonts -->
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,800;1,800&display=swap"
+		rel="stylesheet">
+	<style>
+		body {
+			background: #000000;
+			font-family: 'Open Sans', sans-serif;
+			font-weight: 400;
+		}
+
+		h1 {
+			font-weight: 800;
+		}
+
+		p {
+			line-height: 1.7rem;
+		}
+
+		a {
+			color: #a2d5ff;
+			text-decoration: 0.1px underline dotted #6e6e6e;
+		}
+
+		a:hover {
+			text-decoration: underline;
+			color: #ffee00;
+			filter: drop-shadow(0rem 0rem 0.4rem #ffffff);
+		}
+
+		#map {
+			height: 80vh;
+			background: #293744;
+		}
+
+		#legend {
+			font-size: 1rem;
+			border-radius: 5px;
+			max-width: 250px;
+			font-family: 'Open Sans', sans-serif;
+		}
+
+		#legend span {
+			width: 20px;
+			height: 20px;
+			float: left;
+			margin: 0 10px 4px 0;
+		}
+
+		#legend label {
+			font-size: 0.9rem;
+		}
+
+		#legend label:after {
+			content: '';
+			display: block;
+			clear: both;
+		}
+
+		/* Small devices (landscape phones, 576px and up) */
+		@media (min-width: 576px) {}
+
+		/* Medium devices (tablets, 768px and up) */
+		@media (min-width: 768px) {
+
+			aside {
+				height: 80vh;
+			}
+		}
+
+		/* Large devices (desktops, 992px and up) */
+		@media (min-width: 992px) {}
+
+		/* Extra large devices (large desktops, 1200px and up) */
+		@media (min-width: 1200px) {}
+	</style>
+
+</head>
+
+<body>
+	<div class="container-fluid">
+		<header class="row bg-dark text-white py-3">
+			<div class="col">
+				<h1>Alaska's Median Earnings🐻‍❄️</h1>
+			</div>
+		</header>
+
+		<section class="row">
+			<div class="col-md-8 col-lg-9 col-xl-10 order-md-2 px-0">
+				<div id="map"></div>
+			</div>
+			<aside id="about"
+				class="col-md-4 col-lg-3 col-xl-2 order-md-1 text-white py-2 pl-3 bg-secondary overflow-auto">
+				<section>
+					<h3 class="py-2">How much do blue-collar workers get paid?</h3>
+
+					<p>This choropleth map shows the wage comparison in the agriculture,
+					forestry, fishing and hunting,
+					and mining industries to all other occupations in the State of Alaska. The numbers used are the 2020 estimated median earnings for the civilian employed population 16 years and over (measured over a 12-month span using 2019 inflation-adjusted dollars). The overall industry is further subdivided as follows:
+					<ol>
+						<li>Agriculture,
+							forestry, fishing and
+							hunting</li>
+						<li>Mining, quarrying,
+							and oil and gas
+							extraction</li>
+						<li>Construction</li>
+						<li>Manufacturing</li>
+						<li>Wholesale trade</li>
+						<li>Retail trade</li>
+						<li>Transportation and warehousing, and utilities</li>
+
+					</ol>
+					<p></p>
+					</p>
+					<p>Data is obtained through the US Census Bureau's <a href="https://data.census.gov/cedsci/">data
+							portal</a>, and <a href="https://www.naturalearthdata.com/">Natural Earth</a></p><p>Borough data didn't match (one set of data was more current than the other), so QGIS was used to perform a vector layer intersection to create the right polygon, data by attributes were joined, and finally exported as a GeoJSON.</p>
+
+				</section>
+			</aside>
+		</section>
+
+		<footer class="row bg-dark text-white py-3">
+			<div class="col">
+				<ul class="list-unstyled">
+					<li>authored by <a href="https://www.linkedin.com/in/siriusbontea/">Sirius T. Bontea</a></li>
+					<li>24 April 2022</li>
+					<li>data source: <a href="https://data.census.gov/cedsci/">US Census Bureau</a></li>
+				</ul>
+			</div>
+		</footer>
+	</div>
+
+	<!-- legend is outside of container-fluid and will be dynamically added to map -->
+	<div class="bg-secondary py-2 px-3 ml-3 mt-3 text-white" id="legend"></div>
+
+	<!-- ui is outside of container-fluid and will be dynamically added to map -->
+	<div class="form-group mr-3 mt-3" id="dropdown-ui">
+		<select class="form-control bg-primary text-white">
+			<option value="B24031e3" selected>Agricultural/Wildlife</option>
+			<option value="B24031e4">
+				Mining/Energy</option>
+			<option value="B24031e5">
+				Construction
+			</option>
+			<option value="B24031e6">
+				Manufacturing</option>
+			<option value="B24031e7">
+				Wholesale trade</option>
+			<option value="B24031e8">
+				Retail trade</option>
+			<option value="B24031e9">
+				Logistics</option>
+		</select>
+	</div>
+
+	<!-- Add jQuery as the video lesson shows -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+	<!-- Add Popper JS as the video lesson shows -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js"
+		integrity="sha512-2rNj2KJ+D8s1ceNasTIex6z4HWyOnEYLVC3FigGOmyQCZc2eBXKgOxQmo3oKLHyfcj53uz4QMsRCWNbLd32Q1g=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<!-- Add Bootstrap -->
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"
+		integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13"
+		crossorigin="anonymous"></script>
+	<!-- then Leaflet JS -->
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+		integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+		crossorigin=""></script>
+	<!-- then Simple Statistics -->
+	<script src='https://unpkg.com/simple-statistics@7.7.0/dist/simple-statistics.min.js'></script>
+	<!-- Proj4js v2.8.0 script from https://cdnjs.com/libraries/proj4js/2.8.0 -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"
+		integrity="sha512-ha3Is9IgbEyIInSb+4S6IlEwpimz00N5J/dVLQFKhePkZ/HywIbxLeEu5w+hRjVBpbujTogNyT311tluwemy9w=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<!-- Proj4Leaflet v1.0.2 script from https://cdnjs.com/libraries/proj4leaflet -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4leaflet/1.0.2/proj4leaflet.min.js"
+		integrity="sha512-GsAYl1wxzWW6azVpXkhyYfjMb2LbaOnlrqWMBdAk9xDcilinFvGMN+48Ajp/10u/9lcnh8YyS2CYNgung7ewHg=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+	<script>
+		// PROJCS["NAD83(NSRS2007) / Alaska Albers",
+		// 	GEOGCS["NAD83(NSRS2007)",
+		// 	DATUM["NAD83_National_Spatial_Reference_System_2007",
+		// 	SPHEROID["GRS 1980", 6378137, 298.257222101,
+		// 	AUTHORITY["EPSG", "7019"]],
+		// 	TOWGS84[0, 0, 0, 0, 0, 0, 0],
+		// 	AUTHORITY["EPSG", "6759"]],
+		// 	PRIMEM["Greenwich", 0,
+		// 	AUTHORITY["EPSG", "8901"]],
+		// 	UNIT["degree", 0.0174532925199433,
+		// 	AUTHORITY["EPSG", "9122"]],
+		// 	AUTHORITY["EPSG", "4759"]],
+		// 	PROJECTION["Albers_Conic_Equal_Area"],
+		// 	PARAMETER["standard_parallel_1", 55],
+		// 	PARAMETER["standard_parallel_2", 65],
+		// 	PARAMETER["latitude_of_center", 50],
+		// 	PARAMETER["longitude_of_center", -154],
+		// 	PARAMETER["false_easting", 0],
+		// 	PARAMETER["false_northing", 0],
+		// 	UNIT["metre", 1,
+		// 	AUTHORITY["EPSG", "9001"]],
+		// 	AXIS["X", EAST],
+		// 	AXIS["Y", NORTH],
+		// 	AUTHORITY["EPSG", "3467"]]
+
+		var naprj = {
+			epsg: "EPSG:3467",
+			def: "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+			resolutions: [8192, 4096, 2048, 1024, 512, 256, 128],
+			origin: [0, 0],
+		};
+
+		var crs = new L.Proj.CRS(naprj.epsg, naprj.def, {
+			resolutions: naprj.resolutions,
+			origin: naprj.origin,
+		});
+
+// initial Leaflet map options
+		const options = {
+			crs: crs,
+			center: [64.7316667,-152.472194], // Geographic Centre of Alaska
+			zoom: 1.2,
+			zoomSnap: 0.5,
+			zoomDelta: 0.2,
+			zoomControl: false,
+			maxBounds: [[0, -170], [75, -80]],
+			maxBoundsViscosity: .5,
+		}
+
+		// create Leaflet map and apply options
+		const map = L.map('map', options);
+		// new L.control.zoom({ position: "bottomright",
+		// zoomControl: true }).addTo(map)
+
+		// set global variables for map layer,
+		// mapped attribute, and normalizing attribute
+		let attributeValue = "B24031e3";
+		const normValue = "B24031e1"; // Total: Civilian employed population 16 years and over with earnings -- (Estimate)
+
+		// create object to hold legend titles
+		const labels = {
+			"B24031e3": "Agriculture, forestry, fishing and	hunting",
+			"B24031e4": "Mining, quarrying, and oil and gas	extraction",
+			"B24031e5": "Construction",
+			"B24031e6": "Manufacturing",
+			"B24031e7": "Wholesale trade",
+			"B24031e8": "Retail trade",
+			"B24031e9": "Transportation and warehousing, and utilities"
+		}
+
+		// fetch data from a remote source
+		fetch("data/ak_boroughs_x24.json")
+			// after it is returned...
+			.then(function (response) {
+				// if has a property called ok, and it is true
+				if (response.ok) {
+					// The API call was successful!
+					// Parse the JSON into a useable format, then return it
+					return response.json();
+				} else {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
+			})
+			// The returned response is now data in a new then method
+			.then(function (data) {
+				// This is the JSON from our response
+				console.log(data);
+				// Pass the data to the drawMap function
+				drawMap(data);
+			});
+
+		function drawMap(inputData) {
+			//crate Leaflet data layer and add to map
+			const boroughs = L.geoJson(inputData, {
+				// style boroughs with initial default path options
+				style: function (feature) {
+					return {
+						color: '#20282e',
+						weight: 2,
+						fillOpacity: 1,
+						fillColor: '#1f78b4'
+					};
+				},
+				// add hover/touch functionality to each feature layer
+				onEachFeature: function (feature, layer) {
+					// when mousing over a layer
+					layer.on('mouseover', function () {
+						//change the stroke color and bring that element to the front
+						layer.setStyle({
+							color: '#ffd70090',
+							weight: 5
+						}).bringToFront();
+					});
+					// on mousing off layer
+					layer.on('mouseout', function () {
+						// reset the layer style to its original stroke color
+						layer.setStyle({
+							color: '#20282e',
+							weight: 2
+						});
+					});
+				}
+			}).addTo(map);
+			///////////// Need to comment these out, otherwise it locks the map zoom and centre properties!!/////////////
+			// fit the map's bounds and zoom level using the boroughs extent
+			// map.fitBounds(boroughs.getBounds(), {
+			// 	padding: [18, 18] // add padding around boroughs
+			// });
+			addUi(boroughs)
+			updateMap(boroughs)
+		}
+
+		// Political Boundary Lines for North America
+fetch("data/boundary_lines.json")
+  .then(function (response) {
+    console.log(response);
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  })
+  .then(function (data) {
+    var data = L.geoJson(data, {
+      style: function (feature) {
+        return {
+          color: "#000",
+          weight: 1.5,
+          opacity: 1,
+          interactive: false,
+        };
+      },
+    }).addTo(map);
+    drawMap(data);
+  })
+  .then(function () {
+    drawNewLayers();
+  })
+  .catch(function (error) {
+    console.log(`Something went wrong: ${error}`);
+  });
+
+  // Political Boundary Lines for Partial World Map
+	fetch("data/world-map.json")
+		.then(function (response) {
+			console.log(response);
+			if (response.ok) {
+				return response.json();
+			} else {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+		})
+		.then(function (data) {
+			var data = L.geoJson(data, {
+				style: function (feature) {
+					return {
+						color: "#000",
+						fillColor: "#000",
+						weight: 2,
+						opacity: 1,
+						interactive: false,
+					};
+				},
+			}).addTo(map);
+			drawMap(data);
+		})
+		.then(function () {
+			drawNewLayers();
+		})
+		.catch(function (error) {
+			console.log(`Something went wrong: ${error}`);
+		});
+
+		function updateMap(boroughs) {
+			// console log for borough can be done here in order to verify the Leaflet layers object is not accessible and scoped within this function
+			console.log(boroughs);
+			// get the class breaks for the current data attribute
+			const breaks = getClassBreaks(boroughs);
+			// loop through each boroughs layer based on its normalised data value
+			boroughs.eachLayer(function (layer) {
+				const props = layer.feature.properties;
+				// set the fill color of layers vased on its normalised data value
+				if (props[attributeValue]){
+						layer.setStyle({
+						fillColor: getColor(props[attributeValue], breaks)
+					});
+					// assemble string sequence of info for tooltip (end line break with + operator)
+					let tooltipInfo = `<b>${props["NAME_2"]} Borough</b></br>
+					$${((props[attributeValue])).toLocaleString()}`
+					// bind a tooltip to layer with borough-specific information
+					layer.bindTooltip(tooltipInfo, {
+						// sticky property so tooltip follows the mouse
+						sticky: true
+					});
+				} else {
+					layer.setStyle({
+						fillColor: 'gray'	
+					});
+
+					layer.bindTooltip("No data", {
+						// sticky property so tooltip follows the mouse
+						sticky: true
+					});
+
+				}
+				
+			});
+			// update the legend with the current data attribute information
+			addLegend(breaks);
+		}
+
+		// Get class breaks in data
+		function getClassBreaks(boroughs) {
+			// create empty Array for storing values
+			const values = [];
+			// loop through all the boroughs
+			boroughs.eachLayer(function (layer) {
+				if (layer.feature.properties[attributeValue]) {
+					// push the value of the attribute into the values array
+					let value = layer.feature.properties[attributeValue] // layer.feature.properties[normValue];
+				values.push(value); // push the normalised value for each layer into the Array
+				}
+				
+			});
+			// determine an array of the lowest value within each cluster
+			const clusters = ss.ckmeans(values, 5);
+			// create an array of the lowest value within each cluster
+			const breaks = clusters.map(function (cluster) {
+				return [cluster[0], cluster.pop()];
+			});
+			// return array of arrays, e.g., [[0.24,0.25], [0.26, 0.37], etc.]
+			return breaks;
+		}
+
+		// Get color of borough
+		function getColor(d, breaks) {
+			// function accepts a single normalised data attribute value and uses a series of condtional statements to determine which colour value to return to the function caller
+			if (d <= breaks[0][1]) {
+				return '#ffffcc';
+			} else if (d <= breaks[1][1]) {
+				return '#a1dab4';
+			} else if (d <= breaks[2][1]) {
+				return '#41b6c4';
+			} else if (d <= breaks[3][1]) {
+				return '#2c7fb8';
+			} else if (d <= breaks[4][1]) {
+				return '#253494';
+			}
+		}
+
+		function addLegend(breaks) {
+
+			// create a new Leaflet control object, and position it at top left
+			const legendControl = L.control({ position: 'topleft' });
+			// when the legend is added to the map
+			legendControl.onAdd = function () {
+				// select a div element with an id attribute of legend
+				const legend = L.DomUtil.get('legend');
+				// disable scroll and click/touch on map when on legend
+				L.DomEvent.disableScrollPropagation(legend);
+				L.DomEvent.disableClickPropagation(legend);
+				// return the selection to the method
+				return legend;
+			};
+			// add the empty legend div to the map
+			legendControl.addTo(map);
+			// call the updateLegend function
+			updateLegend(breaks);
+		}
+
+		////////// 
+
+		function updateLegend(breaks) {
+			// select the legend, add a title, begin an unordered list and assign to a variable
+			const legend = $('#legend').html(`<h5>${labels[attributeValue]}</h5>`);
+			// // loop through the Array of classification break values
+			for (let i = 0; i <= breaks.length - 1; i++) {
+				let color = getColor(breaks[i][0], breaks);
+				legend.append(
+					`<span style="background:${color}"></span>
+					<label>$${(breaks[i][0]).toLocaleString()} &mdash;
+					$${(breaks[i][1]).toLocaleString()}</label><br>`);
+			}
+			legend.append(
+					`<span style="background:grey"></span>
+					<label>No data</label><br>`);
+		}
+
+		//////////
+
+		function addUi(boroughs) {
+			console.log(boroughs)
+			// create the slider control
+			let selectControl = L.control({ position: "topright" });
+			if (L.Browser.mobile) {
+				selectControl = L.control({ position: "bottomleft" });
+			} 
+			
+			// when control is added
+			selectControl.onAdd = function () {
+				// get the element with id attribute of ui-controls
+				return L.DomUtil.get("dropdown-ui");
+			};
+			// add the control to the map
+			selectControl.addTo(map);
+			$('#dropdown-ui select').change(function () {
+				// store reference to currently selected value
+				attributeValue = this.value;
+
+				// call updateMap function
+				updateMap(boroughs);
+			});
+		}
+
+		
+	</script>
+</body>
+
+</html>
